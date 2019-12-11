@@ -14,15 +14,15 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package main // import "github.com/mmerrill3/helm-agpigroup-fixer/cmd"
+package main // import "github.com/mmerrill3/helm-apigroup-fixer/cmd"
 
 import (
-	"log"
-	"github.com/mmerrill3/helm-apigroup-fixer/pkg/version"
-	"github.com/mmerrill3/helm-apigroup-fixer/pkg/kube"
 	"bufio"
-	"os"
 	"fmt"
+	"github.com/mmerrill3/helm-apigroup-fixer/pkg/kube"
+	"github.com/mmerrill3/helm-apigroup-fixer/pkg/version"
+	"log"
+	"os"
 )
 
 //Main is the starting point for our app
@@ -35,18 +35,22 @@ func main() {
 	//get the chart name and the tiller namespace to look at
 	reader := bufio.NewReader(os.Stdin)
 	fmt.Print("Enter the chart: ")
-	chart, err := reader.ReadString("\n")
+	chart, err := reader.ReadString('\n')
 	if err != nil {
 		logger.Fatal("did not understand the chart")
 	}
+	fmt.Printf("handling chart: %s", chart)
+
 	fmt.Print("Enter the tiller namespace: ")
-	tillerNamespace, err := reader.ReadString("\n")
+	tillerNamespace, err := reader.ReadString('\n')
 	if err != nil {
 		logger.Fatal("did not understand the tiller namespace")
 	}
+	fmt.Printf("handling namespace: %s", tillerNamespace)
+
 	//get the configmap for the release
 	//get the configmap client
-	clientset, err := kube.New(nil).KubernetesClientSet()
+	_, err = kube.New(nil).KubernetesClientSet()
 	if err != nil {
 		logger.Fatalf("Cannot initialize Kubernetes connection: %s", err)
 	}
