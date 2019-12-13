@@ -18,7 +18,7 @@ package driver // import "github.com/mmerrill3/helm-apigroup-fixer/pkg/storage/d
 
 import (
 	storageerrors "github.com/mmerrill3/helm-apigroup-fixer/pkg/storage/errors"
-	rspb "k8s.io/helm/pkg/proto/hapi/release"
+	rspb "github.com/mmerrill3/helm-apigroup-fixer/pkg/proto/hapi/release"
 )
 
 var (

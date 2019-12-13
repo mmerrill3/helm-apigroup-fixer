@@ -17,48 +17,110 @@ limitations under the License.
 package main // import "github.com/mmerrill3/helm-apigroup-fixer/cmd"
 
 import (
-	"bufio"
+	"flag"
 	"fmt"
-	"github.com/mmerrill3/helm-apigroup-fixer/pkg/kube"
-	"github.com/mmerrill3/helm-apigroup-fixer/pkg/version"
+	"io/ioutil"
 	"log"
 	"os"
+
+	"github.com/mmerrill3/helm-apigroup-fixer/pkg/kube"
+	"github.com/mmerrill3/helm-apigroup-fixer/pkg/storage/driver"
+	"github.com/mmerrill3/helm-apigroup-fixer/pkg/version"
+	//"k8s.io/kubernetes/pkg/apis/extensions/v1beta1"
+	//typev1beta1 "k8s.io/api/apps/v1beta1"
+	//"k8s.io/apimachinery/pkg/runtime"
+)
+
+var (
+	ingest   = flag.Bool("ingest", false, "whether to read manifest.yaml an apply it, otherwise, produce manifest.yaml")
+	release  = flag.String("release", "", "tiller release name to manage")
+	tillerns = flag.String("tiller-namespace", "kube-system", "tiller namespace that holds the release name as a config map")
 )
 
 //Main is the starting point for our app
 func main() {
+	flag.Parse()
 
 	logger := newLogger("main")
 
 	logger.Printf("Starting helm configmap fixer version %s", version.GetVersion())
-
-	//get the chart name and the tiller namespace to look at
-	reader := bufio.NewReader(os.Stdin)
-	fmt.Print("Enter the chart: ")
-	chart, err := reader.ReadString('\n')
-	if err != nil {
-		logger.Fatal("did not understand the chart")
+	logger.Printf("Ingesting: %s", *ingest)
+	if *release == "" {
+		logger.Fatal("need to pass in a release, like dev-wildcard-cert.v25")
 	}
-	fmt.Printf("handling chart: %s", chart)
-
-	fmt.Print("Enter the tiller namespace: ")
-	tillerNamespace, err := reader.ReadString('\n')
-	if err != nil {
-		logger.Fatal("did not understand the tiller namespace")
-	}
-	fmt.Printf("handling namespace: %s", tillerNamespace)
 
 	//get the configmap for the release
 	//get the configmap client
-	_, err = kube.New(nil).KubernetesClientSet()
+	clientset, err := kube.New(nil).KubernetesClientSet()
 	if err != nil {
 		logger.Fatalf("Cannot initialize Kubernetes connection: %s", err)
 	}
+	fmt.Printf("got k8s client: %+v\n", clientset)
 
+	cfgmaps := driver.NewConfigMaps(clientset.CoreV1().ConfigMaps(*tillerns))
+	//fmt.Printf("got k8s cfgmaps client: %+v\n", cfgmaps)
+
+	storedRelease, err := cfgmaps.Get(*release)
+	if err != nil {
+		logger.Fatalf("Cannot find release: %s", err)
+	}
 	//update the manifest for deployments in memory
 
-	//write back the configmap
+	if !(*ingest) {
+		manifest := storedRelease.Manifest
+		fmt.Printf("got manifest: %+v\n", manifest)
+		//write to file
+		err = ioutil.WriteFile("manifest.yaml", []byte(manifest), 0644)
+	} else {
+		bmanifest, err := ioutil.ReadFile("manifest.yaml")
+		if err != nil {
+			logger.Fatalf("Cannot find manifest.yaml: %s", err)
+		}
+		storedRelease.Manifest = string(bmanifest)
+		err = cfgmaps.Update(*release, storedRelease)
+		if err != nil {
+			logger.Fatalf("Cannot find update the stored configmap: %s", err)
+		}
+	}
+	/*
+		options := genericclioptions.NewConfigFlags()
+		ddConfig := "/Users/mmerrill/.kube/configDockerDesktop"
+		options.KubeConfig = &ddConfig
+		kubeClient := kube.New(options)
+		fmt.Printf("got kubeClient: %+v\n", kubeClient)
+		kubeClient.Log = newLogger("kube").Printf
 
+		result, err := kubeClient.BuildUnstructured(tillerNamespace, bytes.NewBufferString(manifest))
+		if err != nil {
+			logger.Fatalf("Cannot parse manifest: %s", err)
+		}
+		fmt.Printf("got result: %+v\n", result)
+
+		//dev-wildcard-cert.v25
+		//kube-system
+
+		info := &resource.Info{
+			Namespace: tillerNamespace,
+			Name:      "wildcard-cert-manager",
+			Mapping: &meta.RESTMapping{
+				GroupVersionKind: schema.GroupVersionKind{
+					Group:   "extensions",
+					Version: "v1beta1",
+					Kind:    "Deployment",
+				},
+			},
+		}
+
+		filteredInfo := result.Get(info)
+		if filteredInfo == nil {
+			logger.Fatalf("Cannot find filterd Info: %+v\n", *info)
+		}
+		fmt.Printf("got filtered info: %+v\n", filteredInfo.Object)
+
+	*/
+	//convert to apps/v1
+	//v1beta1.Convert_v1beta1_DeploymentSpec_To_apps_DeploymentSpec()
+	//write back the configmap
 	//voila!
 }
 
