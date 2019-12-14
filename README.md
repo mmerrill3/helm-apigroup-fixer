@@ -5,7 +5,7 @@ There is a need for this utility to reuse the protocal buffer files from helm in
 
 The problem this utility fixes is that the last release of a helm chart will have references to removed apigroups while running on kubernetes 1.16.x.  This means we need to update that last release to edit the resources to match what is actually deployed into kubernetes.  For instance, deployments at extensions/v1beta1 are no longer supported.  If you did not update you helm charts before kubernetes version 1.16.x, your chart updates will now fail because kubernetes does not recognize extensions/v1beta1 anymore for deployments.
 
-The normal flow to update an existing helm chart would be to run the utilty in non-infestion mode first to get the manifest from the **last** release.  Then, the user would make the changes necessary in the manifest.yaml file by changing extensions/v1beta1 deployments to apps/v1.  Or, updating any other resource.  After that, the user would run the utility in ingestion mode (the --ingest flag) to read the manifest.yaml file and apply it to the release.
+The normal flow to update an existing helm chart would be to run the utilty in non-ingestion mode first to get the manifest from the **last** release.  Then, the user would make the changes necessary in the manifest.yaml file by changing extensions/v1beta1 deployments to apps/v1.  Or, updating any other resource.  After that, the user would run the utility in ingestion mode (the --ingest flag) to read the manifest.yaml file and apply it to the release.
 
 This utility uses glide, since it was branched off of helm at version 2.14.1.  Go modules were not used in helm until version 3.  As such, you need to run glide to get the vendored dependencies.
 
