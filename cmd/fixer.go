@@ -26,6 +26,7 @@ import (
 	"github.com/mmerrill3/helm-apigroup-fixer/pkg/kube"
 	"github.com/mmerrill3/helm-apigroup-fixer/pkg/storage/driver"
 	"github.com/mmerrill3/helm-apigroup-fixer/pkg/version"
+	_ "k8s.io/client-go/plugin/pkg/client/auth/oidc"
 	//"k8s.io/kubernetes/pkg/apis/extensions/v1beta1"
 	//typev1beta1 "k8s.io/api/apps/v1beta1"
 	//"k8s.io/apimachinery/pkg/runtime"
